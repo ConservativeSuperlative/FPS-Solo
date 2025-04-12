@@ -184,8 +184,13 @@ class FirstPersonController(cave.Component):
 			else:
 				self.ammoInv = self.ammoMax * 4
 				
-			print("PICKUP")
-			
+			print("AMMP PICKUP")
+	
+	def weaponPickup(self, weapon):
+		print(f"{weapon} picked up!")
+		x = cave.newMeshEntity("SK_AR4")
+		x.setParent(self.entity)
+		pass		
 		
 	def updateUI(self):
 		ammoUI = self.UI_Ammo.get("UI Element")
