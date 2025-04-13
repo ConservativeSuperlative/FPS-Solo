@@ -1,6 +1,5 @@
 import cave
-import cave.network
-import cave.steam
+
 
 
 class FirstPersonController(cave.Component):
@@ -35,12 +34,12 @@ class FirstPersonController(cave.Component):
 		self.movementTimer = cave.SceneTimer() # To add footsteps...
 		self.KillCount = 0
 		self.isDead = False
-		self.weaponInv = ["AK 74",]
+		self.weaponInv = []
 		self.currentWeapon = cave.Entity()
-		
+		self.currentWeaponInt = 0
 		self.muzzle = self.entity.getChild("Muzzle")
 		#self.muzzle = self.currentWeapon.getChild("Muzzle")
-
+		#self.mesh.deactivate(scene)
 	def movement(self):
 		if self.isDead == False:
 			
@@ -74,11 +73,18 @@ class FirstPersonController(cave.Component):
 			if events.pressed(cave.event.KEY_LCTRL):
 				self.character.shape.offset = crouchOffset
 				self.walkSpeed = 2
+			
 			if events.released(cave.event.KEY_LCTRL):
 				self.character.shape.offset = defaultOffset
 				self.walkSpeed = 5
-			
-
+			#Weapon Selection
+			if events.getMouseScroll() > 0:
+				cave.playSound("ui-over.ogg")
+				self.weaponSelect(events.getMouseScroll())
+			if events.getMouseScroll() < 0:
+				cave.playSound("ui-over.ogg")
+				self.weaponSelect(events.getMouseScroll())
+	
 	def mouselook(self, sens=-0.012):
 		events = cave.getEvents()
 		events.setRelativeMouse(True)
@@ -207,21 +213,30 @@ class FirstPersonController(cave.Component):
 				if weaponName == item:
 					pass"""
 			if not weaponName in self.weaponInv:
+				if self.mesh.isActive():
+					self.mesh.deactivate(scene)
 				if not self.mesh.isActive():
 					self.mesh.activate(scene)
-				self.weaponInv.append(weaponName)		
+					for child in self.mesh.getChildren():
+						child.deactivate(scene)
+				self.weaponInv.append(weaponName)
+				self.currentWeaponInt = len(self.weaponInv)		
 				print(f"{weaponName} picked up!")
 				sd = cave.playSound("gun-cocking-01.ogg")
-				self.AK74.deactivate(scene)
+				
 				if weaponName == "AR4":
 					self.currentWeapon = self.AR4
 					self.AR4.activate(scene)
 					#icon = cave.UIStyleColor.image.setAsset("M4-Thumbnail.png")
 					icon : cave.UIElementComponent = self.UI_WeaponImage.get("UI Element")
 					self.UI_WeaponImage.getChild("Icon_AR4").activate(scene)
-				
+				if weaponName == "AK74":
+					self.currentWeapon = self.AK74
+					self.AK74.activate(scene)
+					#icon = cave.UIStyleColor.image.setAsset("M4-Thumbnail.png")
+					icon : cave.UIElementComponent = self.UI_WeaponImage.get("UI Element")
+					self.UI_WeaponImage.getChild("Icon_AK74").activate(scene)
 					#icon.image.setAsset("M4-Thumnail.png")
-
 				
 			self.muzzle = self.currentWeapon.getChild("Muzzle")
 			self.muzzle.deactivate(scene)
@@ -229,7 +244,26 @@ class FirstPersonController(cave.Component):
 
 			
 			pass		
+	
+	def weaponSelect(self, value):
+		x = self.currentWeaponInt
 		
+		if value < 0:
+			x += 1
+			if x > len(self.weaponInv):
+				x = 0
+				print(self.weaponInv[x])
+				try:
+					self.currentWeapon = self.weaponInv[x]
+				except:
+					print("weaponFail")
+			if value > 0:
+				x -= 1
+				if x < 0:
+					x = len(self.weaponInv)
+					print(self.weaponInv[x])
+		pass
+
 	def updateUI(self):
 		ammoUI = self.UI_Ammo.get("UI Element")
 		ammoUI.setText(f'{str(int(self.ammoCurrent))} / {str(int(self.ammoMax))}')
@@ -313,7 +347,7 @@ class FirstPersonController(cave.Component):
 	def animateAndSounds(self):
 		layer : cave.AnimationComponentAnimationLayer = self.animator.getAnimation(0)
 		layer.speed = 100
-
+		
 		addFootstep = False
 		timer = self.movementTimer.get()
 
@@ -337,7 +371,9 @@ class FirstPersonController(cave.Component):
 		self.movement()
 		self.mouselook()
 		self.shoot()
-		self.animateAndSounds()
+		if self.mesh.getActive() == True:
+
+			self.animateAndSounds()
 		self.ADS()
 		self.reloadWeapon()
 		self.updateUI()
