@@ -18,7 +18,7 @@ class FirstPersonController(cave.Component):
 		self.UI_Health = self.entity.getChild("UI Health")
 		self.UI_Heart_Full = self.entity.getChild("UI Heart_Full")
 		self.UI_Ammo_Inv = self.entity.getChild("UI Ammo_Inv")
-		self.muzzle = self.entity.getChild("Muzzle")
+		self.UI_WeaponImage = self.entity.getChild("UI WeaponImg")
 		self.mesh = self.entity.getChild("FPS Mesh")
 		self.AK74 = self.mesh.getChild("AK 74")
 		self.AR4 = self.mesh.getChild("AR4")
@@ -33,41 +33,50 @@ class FirstPersonController(cave.Component):
 		self.movementTimer = cave.SceneTimer() # To add footsteps...
 		self.KillCount = 0
 		self.isDead = False
-	def movement(self):
-		dt = cave.getDeltaTime()
-		events = cave.getEvents()
-		crouchOffset = cave.Vector3(0, 2, 0)
-		defaultOffset = cave.Vector3(0, 1, 0)
-		x = events.active(cave.event.KEY_A) - events.active(cave.event.KEY_D)
-		z = events.active(cave.event.KEY_W) - events.active(cave.event.KEY_S)
+		self.weaponInv = ["AK 74",]
+		self.currentWeapon = cave.Entity()
 		
-		isRunning = events.active(cave.event.KEY_LSHIFT)
-		self.movementState = 0
+		self.muzzle = self.entity.getChild("Muzzle")
+		#self.muzzle = self.currentWeapon.getChild("Muzzle")
 
-		dir = cave.Vector3(x, 0, z) 
-		if dir.length() > 0.0:
-			dir.normalize()
-
-			if isRunning:
-				dir *= self.runSpeed
-				self.movementState = 2
-			else:
-				dir *= self.walkSpeed
-				self.movementState = 1
-
-		self.character.setWalkDirection(dir * dt)
-#JUMP
-		if events.pressed(cave.event.KEY_SPACE):
-			if self.character.onGround():
-				self.character.jump()
-#Crouch		
-		if events.pressed(cave.event.KEY_LCTRL):
-			self.character.shape.offset = crouchOffset
-			self.walkSpeed = 2
-		if events.released(cave.event.KEY_LCTRL):
-			self.character.shape.offset = defaultOffset
-			self.walkSpeed = 5
+	def movement(self):
+		if self.isDead == False:
 			
+			dt = cave.getDeltaTime()
+			events = cave.getEvents()
+			crouchOffset = cave.Vector3(0, 2, 0)
+			defaultOffset = cave.Vector3(0, 1, 0)
+			x = events.active(cave.event.KEY_A) - events.active(cave.event.KEY_D)
+			z = events.active(cave.event.KEY_W) - events.active(cave.event.KEY_S)
+		
+			isRunning = events.active(cave.event.KEY_LSHIFT)
+			self.movementState = 0
+
+			dir = cave.Vector3(x, 0, z) 
+			if dir.length() > 0.0:
+				dir.normalize()
+
+				if isRunning:
+					dir *= self.runSpeed
+					self.movementState = 2
+				else:
+					dir *= self.walkSpeed
+					self.movementState = 1
+
+			self.character.setWalkDirection(dir * dt)
+			#JUMP
+			if events.pressed(cave.event.KEY_SPACE):
+				if self.character.onGround():
+					self.character.jump()
+			#Crouch		
+			if events.pressed(cave.event.KEY_LCTRL):
+				self.character.shape.offset = crouchOffset
+				self.walkSpeed = 2
+			if events.released(cave.event.KEY_LCTRL):
+				self.character.shape.offset = defaultOffset
+				self.walkSpeed = 5
+			
+
 	def mouselook(self, sens=-0.012):
 		events = cave.getEvents()
 		events.setRelativeMouse(True)
@@ -93,68 +102,69 @@ class FirstPersonController(cave.Component):
 		# If the Player is holding the Left Mouse Button, it should be able to shoot.
 		# But I'm also using a timer to limit how many bullets per second it will be
 		# able to shoot. Otherwise, it will become a mess!
-		if events.active(cave.event.MOUSE_LEFT) and self.shotTimer.get() > 0.1 and self.ammoCurrent > 0:
-			self.shotTimer.reset()
+		if self.mesh.isActive():
+			if events.active(cave.event.MOUSE_LEFT) and self.shotTimer.get() > 0.1 and self.ammoCurrent > 0:
+				self.shotTimer.reset()
 
-			# Shot Sound:
-			sd = cave.playSound("bang-04.ogg")
-			sd.pitch = cave.random.uniform(0.4, 1.0)
+				# Shot Sound:
+				sd = cave.playSound("bang-04.ogg")
+				sd.pitch = cave.random.uniform(0.4, 1.0)
 
-			# Duplicating the Muzzle Effect...
-			muzzle = scene.copyEntity(self.muzzle)
-			muzzle.activate(scene)
-			muzzle.scheduleKill(0.05) # Only lasts for a fraction of a Second
+				# Duplicating the Muzzle Effect...
+				muzzle = scene.copyEntity(self.muzzle)
+				muzzle.activate(scene)
+				muzzle.scheduleKill(0.05) # Only lasts for a fraction of a Second
 
-			# I'll raycast from the camera position to its backward direction 
-			# in order to see if the projectile hits something. 
-			origin : cave.Vector3 = cam.getWorldPosition()
-			target = origin + cam.getForwardVector(True) * -1000
+				# I'll raycast from the camera position to its backward direction 
+				# in order to see if the projectile hits something. 
+				origin : cave.Vector3 = cam.getWorldPosition()
+				target = origin + cam.getForwardVector(True) * -1000
 
-			# I'll also create a Mask so the raycast only checks for the bodies
-			# with the 7th bit enabled. This will prevent it from hitting the
-			# player capsule itself.
-			mask = cave.BitMask(False)
-			mask.enable(7)
-			#DA- Create a mask to trace for objects on mask 12 (enemies)
-			enemyMask = cave.BitMask(False)
-			enemyMask.enable(12)
+				# I'll also create a Mask so the raycast only checks for the bodies
+				# with the 7th bit enabled. This will prevent it from hitting the
+				# player capsule itself.
+				mask = cave.BitMask(False)
+				mask.enable(7)
+				#DA- Create a mask to trace for objects on mask 12 (enemies)
+				enemyMask = cave.BitMask(False)
+				enemyMask.enable(12)
 			
-			enemyResult : cave.rayCastOut = scene.rayCast(origin, target, enemyMask)
-			# Then I raycast and check to see if it hits...
-			result = scene.rayCast(origin, target, mask)
-			#DA- Check for an enemy first, if no enemy is hit, check if we need to draw a bullet hole
-			self.ammoCurrent -= 1
-			if enemyResult.hit:
-				#scene.addDebugSphere(result.position, .5, cave.Vector3(0, 255, 0), 10)
-				#enemy = scene.checkContactSphere(self, cave.Vector3(enemyResult.position), .5, 12)
-				for hit in scene.checkContactSphere(enemyResult.position, .33):
-					if hit.entity.name == "TestCharacter":
+				enemyResult : cave.rayCastOut = scene.rayCast(origin, target, enemyMask)
+				# Then I raycast and check to see if it hits...
+				result = scene.rayCast(origin, target, mask)
+				#DA- Check for an enemy first, if no enemy is hit, check if we need to draw a bullet hole
+				self.ammoCurrent -= 1
+				if enemyResult.hit:
+					#scene.addDebugSphere(result.position, .5, cave.Vector3(0, 255, 0), 10)
+					#enemy = scene.checkContactSphere(self, cave.Vector3(enemyResult.position), .5, 12)
+					for hit in scene.checkContactSphere(enemyResult.position, .33):
+						if hit.entity.name == "TestCharacter":
 						
-						self.hitEnemy = hit.entity.getPy("Enemy")
+							self.hitEnemy = hit.entity.getPy("Enemy")
 						
-						try:
-							self.hitEnemy.takeDamage(self.AK_Damage, self)
+							try:
+								self.hitEnemy.takeDamage(self.AK_Damage, self)
 							
-						except:
-							print("Player Can't call takeDamage on TestCharacter")
-							pass
+							except:
+								print("Player Can't call takeDamage on TestCharacter")
+								pass
 				
 				
-				self.causeDamage()
+					self.causeDamage()
 
-			elif result.hit:
-				# Adding the Bullet Hole based on its Entity Template:
-				obj = scene.addFromTemplate("Bullet Hole", result.position)
-				obj.getTransform().lookAt(result.normal)
-				# Schedule Bullet Hole to be killed
-				obj.scheduleKill(5.0)
-#DRY FIRE#######		
-		elif events.active(cave.event.MOUSE_LEFT) and self.shotTimer.get() > 0.1 and self.ammoCurrent <= 0:
+				elif result.hit:
+					# Adding the Bullet Hole based on its Entity Template:
+					obj = scene.addFromTemplate("Bullet Hole", result.position)
+					obj.getTransform().lookAt(result.normal)
+					# Schedule Bullet Hole to be killed
+					obj.scheduleKill(5.0)
+			#DRY FIRE#######		
+			elif events.active(cave.event.MOUSE_LEFT) and self.shotTimer.get() > 0.1 and self.ammoCurrent <= 0:
 			
-			emptySd = cave.playSound("gun-trigger-click-01.ogg")
-			emptySd.setProgress(.5)
-			emptySd.setVolume(3)
-			self.shotTimer.reset()
+				emptySd = cave.playSound("gun-trigger-click-01.ogg")
+				emptySd.setProgress(.5)
+				emptySd.setVolume(3)
+				self.shotTimer.reset()
 			
 	def reloadWeapon(self):
 		
@@ -176,7 +186,7 @@ class FirstPersonController(cave.Component):
 					pass
 			
 			#sd.pitch = cave.random.uniform(0.4, 1.0)
-	
+	#PICKUPS	
 	def ammoPickup(self, ammo):
 		if self.ammoInv < (self.ammoMax * 4):
 			if self.ammoInv + ammo <= self.ammoMax * 4:
@@ -187,10 +197,36 @@ class FirstPersonController(cave.Component):
 			print("AMMP PICKUP")
 	
 	def weaponPickup(self, weapon):
-		print(f"{weapon} picked up!")
-		x = cave.newMeshEntity("SK_AR4")
-		x.setParent(self.entity)
-		pass		
+		print(self.weaponInv)
+		if weapon != self.currentWeapon:
+			scene = cave.getScene()
+			weaponName = weapon.entity.name
+			"""for item in self.weaponInv:
+				if weaponName == item:
+					pass"""
+			if not weaponName in self.weaponInv:
+				if not self.mesh.isActive():
+					self.mesh.activate(scene)
+				self.weaponInv.append(weaponName)		
+				print(f"{weaponName} picked up!")
+				sd = cave.playSound("gun-cocking-01.ogg")
+				self.AK74.deactivate(scene)
+				if weaponName == "AR4":
+					self.currentWeapon = self.AR4
+					self.AR4.activate(scene)
+					#icon = cave.UIStyleColor.image.setAsset("M4-Thumbnail.png")
+					icon : cave.UIElementComponent = self.UI_WeaponImage.get("UI Element")
+					self.UI_WeaponImage.getChild("Icon_AR4").activate(scene)
+				
+					#icon.image.setAsset("M4-Thumnail.png")
+
+				
+			self.muzzle = self.currentWeapon.getChild("Muzzle")
+			self.muzzle.deactivate(scene)
+			
+
+			
+			pass		
 		
 	def updateUI(self):
 		ammoUI = self.UI_Ammo.get("UI Element")
@@ -204,6 +240,7 @@ class FirstPersonController(cave.Component):
 		
 		ammoInvUI = self.UI_Ammo_Inv.get("UI Element")
 		ammoInvUI.setText(str(int(self.ammoInv)))
+	#VITALS	
 	def causeDamage(self):
 		scene = cave.getScene()
 		hm = scene.copyEntity(self.hm)
@@ -221,9 +258,30 @@ class FirstPersonController(cave.Component):
 			if self.healthCurrent < 1:
 				print("YOU DIED")
 				self.isDead = True
-				#self.death()
-			
+				
+				self.death()
+
 			self.healthCurrent += 0.01
+
+	def death(self):
+		scene = cave.getScene()
+		self.respawnTimer = cave.SceneTimer()
+		
+		#self.cam.deactivate(scene)
+		self.transf.setWorldPosition(6.3,0,-9.3)
+		#self.camTransf.setWorldPosition(0,0,0)
+		self.healthCurrent = self.healthMax
+
+	
+	def respawn(self):
+		if self.isDead == True:
+			if self.respawnTimer.get() > 4.0:
+
+				
+				self.isDead = False
+				self.respawnTimer.reset()
+
+		
 
 	def addKill(self, add):
 		
@@ -282,6 +340,7 @@ class FirstPersonController(cave.Component):
 		self.reloadWeapon()
 		self.updateUI()
 		self.checkHealth()
+		self.respawn()
 	def end(self, scene: cave.Scene):
 		pass
 	
