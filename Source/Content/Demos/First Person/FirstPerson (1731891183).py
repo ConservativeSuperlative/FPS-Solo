@@ -1,4 +1,6 @@
 import cave
+import cave.network
+import cave.steam
 
 
 class FirstPersonController(cave.Component):
