@@ -34,7 +34,7 @@ class FirstPersonController(cave.Component):
 		self.movementTimer = cave.SceneTimer() # To add footsteps...
 		self.KillCount = 0
 		self.isDead = False
-		self.weaponInv = []
+		self.weaponInv : cave.Entity = []
 		self.currentWeapon = cave.Entity()
 		self.currentWeaponInt = 0
 		self.muzzle = self.entity.getChild("Muzzle")
@@ -78,12 +78,11 @@ class FirstPersonController(cave.Component):
 				self.character.shape.offset = defaultOffset
 				self.walkSpeed = 5
 			#Weapon Selection
-			if events.getMouseScroll() > 0:
+			if events.getMouseScroll():
 				cave.playSound("ui-over.ogg")
+				#print(events.getMouseScroll())
 				self.weaponSelect(events.getMouseScroll())
-			if events.getMouseScroll() < 0:
-				cave.playSound("ui-over.ogg")
-				self.weaponSelect(events.getMouseScroll())
+		
 	
 	def mouselook(self, sens=-0.012):
 		events = cave.getEvents()
@@ -205,6 +204,7 @@ class FirstPersonController(cave.Component):
 			print("AMMP PICKUP")
 	
 	def weaponPickup(self, weapon):
+		
 		print(self.weaponInv)
 		if weapon != self.currentWeapon:
 			scene = cave.getScene()
@@ -212,15 +212,15 @@ class FirstPersonController(cave.Component):
 			"""for item in self.weaponInv:
 				if weaponName == item:
 					pass"""
-			if not weaponName in self.weaponInv:
+			if not weapon in self.weaponInv:
 				if self.mesh.isActive():
 					self.mesh.deactivate(scene)
 				if not self.mesh.isActive():
 					self.mesh.activate(scene)
 					for child in self.mesh.getChildren():
 						child.deactivate(scene)
-				self.weaponInv.append(weaponName)
-				self.currentWeaponInt = len(self.weaponInv)		
+				self.weaponInv.append(weapon)
+				self.currentWeaponInt = (len(self.weaponInv) - 1)		
 				print(f"{weaponName} picked up!")
 				sd = cave.playSound("gun-cocking-01.ogg")
 				
@@ -230,40 +230,53 @@ class FirstPersonController(cave.Component):
 					#icon = cave.UIStyleColor.image.setAsset("M4-Thumbnail.png")
 					icon : cave.UIElementComponent = self.UI_WeaponImage.get("UI Element")
 					self.UI_WeaponImage.getChild("Icon_AR4").activate(scene)
+					self.UI_WeaponImage.getChild("Icon_AK74").deactivate(scene)
 				if weaponName == "AK74":
 					self.currentWeapon = self.AK74
 					self.AK74.activate(scene)
 					#icon = cave.UIStyleColor.image.setAsset("M4-Thumbnail.png")
 					icon : cave.UIElementComponent = self.UI_WeaponImage.get("UI Element")
 					self.UI_WeaponImage.getChild("Icon_AK74").activate(scene)
+					self.UI_WeaponImage.getChild("Icon_AR4").deactivate(scene)
 					#icon.image.setAsset("M4-Thumnail.png")
 				
+				
+			
 			self.muzzle = self.currentWeapon.getChild("Muzzle")
 			self.muzzle.deactivate(scene)
-			
+
 
 			
-			pass		
+			pass
+		
+
 	
 	def weaponSelect(self, value):
-		x = self.currentWeaponInt
 		
-		if value < 0:
-			x += 1
-			if x > len(self.weaponInv):
-				x = 0
-				print(self.weaponInv[x])
-				try:
-					self.currentWeapon = self.weaponInv[x]
-				except:
-					print("weaponFail")
-			if value > 0:
-				x -= 1
-				if x < 0:
-					x = len(self.weaponInv)
-					print(self.weaponInv[x])
-		pass
-
+		scene = cave.getScene()
+		if len(self.weaponInv) > 1:
+			if self.currentWeapon.name == "AR4":
+				self.currentWeapon = self.AK74
+				self.AR4.deactivate(scene)
+				self.currentWeapon.activate(scene)
+				#icon = cave.UIStyleColor.image.setAsset("M4-Thumbnail.png")
+				icon : cave.UIElementComponent = self.UI_WeaponImage.get("UI Element")
+				self.UI_WeaponImage.getChild("Icon_AK74").activate(scene)
+				self.UI_WeaponImage.getChild("Icon_AR4").deactivate(scene)
+				
+				
+			elif self.currentWeapon.name == "AK 74":
+				self.currentWeapon = self.AR4
+				self.AK74.deactivate(scene)
+				self.currentWeapon.activate(scene)
+				#icon = cave.UIStyleColor.image.setAsset("M4-Thumbnail.png")
+				icon : cave.UIElementComponent = self.UI_WeaponImage.get("UI Element")
+				self.UI_WeaponImage.getChild("Icon_AR4").activate(scene)
+				self.UI_WeaponImage.getChild("Icon_AK74").deactivate(scene)
+				
+		self.muzzle = self.currentWeapon.getChild("Muzzle")
+		self.muzzle.deactivate(scene)
+		print(self.currentWeapon.name)		
 	def updateUI(self):
 		ammoUI = self.UI_Ammo.get("UI Element")
 		ammoUI.setText(f'{str(int(self.ammoCurrent))} / {str(int(self.ammoMax))}')

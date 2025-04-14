@@ -16,7 +16,7 @@ class PT_WeaponPickup(cave.Component):
 		if self.Timer1.get() > 2:
 			self.pickedUp = False
 			self.Timer1.reset()
-
+			
 	def tryPickup(self):
 		
 		
@@ -39,6 +39,8 @@ class PT_WeaponPickup(cave.Component):
 	def update(self):
 		if self.pickedUp == False:
 			self.tryPickup()
+		elif self.pickedUp == True:
+			self.entity.scheduleKill(.2)
 		self.respawn()
 	def end(self, scene: cave.Scene):
 		pass
