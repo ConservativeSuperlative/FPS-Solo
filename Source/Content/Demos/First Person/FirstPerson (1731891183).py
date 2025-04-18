@@ -139,6 +139,7 @@ class FirstPersonController(cave.Component):
 				enemyResult : cave.rayCastOut = scene.rayCast(origin, target, enemyMask)
 				# Then I raycast and check to see if it hits...
 				result = scene.rayCast(origin, target, mask)
+				
 				#DA- Check for an enemy first, if no enemy is hit, check if we need to draw a bullet hole
 				self.ammoCurrent -= 1
 				if enemyResult.hit:
@@ -146,11 +147,11 @@ class FirstPersonController(cave.Component):
 					#enemy = scene.checkContactSphere(self, cave.Vector3(enemyResult.position), .5, 12)
 					for hit in scene.checkContactSphere(enemyResult.position, .33):
 						if hit.entity.name == "TestCharacter":
-						
+							
 							self.hitEnemy = hit.entity.getPy("Enemy")
 						
 							try:
-								self.hitEnemy.takeDamage(self.AK_Damage, self)
+								self.hitEnemy.takeDamage(self.AK_Damage, self, self.transf.getPosition())
 							
 							except:
 								print("Player Can't call takeDamage on TestCharacter")
@@ -277,6 +278,7 @@ class FirstPersonController(cave.Component):
 		self.muzzle = self.currentWeapon.getChild("Muzzle")
 		self.muzzle.deactivate(scene)
 		print(self.currentWeapon.name)		
+	
 	def updateUI(self):
 		ammoUI = self.UI_Ammo.get("UI Element")
 		ammoUI.setText(f'{str(int(self.ammoCurrent))} / {str(int(self.ammoMax))}')

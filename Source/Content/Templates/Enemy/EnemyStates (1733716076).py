@@ -68,6 +68,7 @@ class EStatePatrol(cave.State):
 			if self.targetDist < 1.5:
 				self.timer.reset()
 				
+				
 				return EStateCombat.Melee()
 				
 			elif self.timer.get() > 1.5:
@@ -108,6 +109,20 @@ class EStatePatrol(cave.State):
 			pass
 			
 class EStateCombat(cave.State):
+	class Injured(cave.State):
+		def start(self):
+			self.scene = cave.getScene()
+			print("OUCH!")
+			self.attacker : cave.Entity = self.component.killer
+			pass
+		def update(self):
+			self.component.character.setWalkDirection(self.attacker.getTransform().getPositionCopy())
+			self.component.transf.lookAtPosition(self.attacker.getTransform().getPositionCopy())
+			self.scene.addDebugLine(self.component.transf.position, self.attacker.getTransform().getPositionCopy(), cave.Vector3(0,0,255))
+			
+			return super().update()
+		def end(self):
+			return super().end()
 	class Melee(cave.State):
 		
 		def start(self):

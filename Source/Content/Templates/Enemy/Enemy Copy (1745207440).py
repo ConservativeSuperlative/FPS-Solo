@@ -23,8 +23,10 @@ class Enemy(cave.Component):
 		self.fsm = cave.StateMachine(self)
 		self.fsm.setState(EStatePatrol())
 		self.respawnTimer = cave.SceneTimer()
+		self.attacker : cave.Entity = None
 		self.killer : cave.Entity = None
-
+		self.scanTimer : cave.SceneTimer = cave.SceneTimer()
+		self.takingDamage : bool = False
 	def canMoveForward(self) -> bool:
 		fwd = self.meshTransf.getForwardVector() * 0.2
 		pos = self.transf.worldPosition + cave.Vector3(0, 1, 0)
@@ -39,6 +41,7 @@ class Enemy(cave.Component):
 	
 
 	def enemyScan(self):
+		
 		timer = cave.SceneTimer()
 		yaw = self.meshTransf.getQuaternion()
 		origin = self.transf.worldPosition
@@ -118,7 +121,8 @@ class Enemy(cave.Component):
 				self.isDead = True
 				self.death()
 	
-	def takeDamage(self, damage, attacker : cave.Entity):
+	def takeDamage(self, damage, attacker : cave.Entity, position):
+		self.takingDamage = True
 		scene = cave.getScene()
 		try:
 			if self.Health >= 1:
@@ -128,16 +132,20 @@ class Enemy(cave.Component):
 				#print(attacker.entity.getUID())
 				blood.activate(scene)
 				blood.reload()
-				
+				#self.meshTransf.lookAtPosition(attacker.getTransform().getWorldPosition())
+				#self.entity.getTransform().lookAtPosition(attacker.getTransform().getWorldPosition())
+				#self.character.setWalkDirection(position, False)
 				self.animator.playByName("p-damage", .2, priority=1)
 				self.killer = attacker
-				
+				#self.fsm.setState(EStateCombat.Injured())
+				print(position)
 			else:
 				
 				print("dead")
 		except:
 			pass
-	
+		#self.takingDamage = False
+
 	def updateAnimation(self):
 		dir = self.character.getWalkDirection()
 
@@ -167,10 +175,11 @@ class Enemy(cave.Component):
 					self.animator.playByName("p-idle", 0.2, loop=True)
 
 	def update(self):
-		if not self.isDead:
+		if not self.isDead and not self.takingDamage:
 			self.checkHealth()
 			self.enemyScan()
 			self.fsm.run()
+			
 			self.updateAnimation()
 			
 			#self.chasePlayer()
