@@ -30,7 +30,7 @@ class Enemy(cave.Component):
 	def canMoveForward(self) -> bool:
 		fwd = self.meshTransf.getForwardVector() * 0.2
 		pos = self.transf.worldPosition + cave.Vector3(0, 1, 0)
-
+		
 		mask = cave.BitMask(False)
 		mask.enable(0)
 		

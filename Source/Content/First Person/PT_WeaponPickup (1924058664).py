@@ -22,7 +22,7 @@ class PT_WeaponPickup(cave.Component):
 		
 
 		collision = self.scene.rayCast(self.transf.position, self.transf.position + self.transf.getUpVector() * 3, cave.BitMask(12))
-		self.scene.addDebugLine(self.transf.position, self.transf.position + self.transf.getUpVector() * 3, cave.Vector3(255,255,0))
+		#self.scene.addDebugLine(self.transf.position, self.transf.position + self.transf.getUpVector() * 3, cave.Vector3(255,255,0))
 		if collision.hit:
 			
 			if collision.entity.name == "Player":

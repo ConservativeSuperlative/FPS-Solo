@@ -156,8 +156,14 @@ class FirstPersonController(cave.Component):
 							except:
 								print("Player Can't call takeDamage on TestCharacter")
 								pass
-				
-				
+						if hit.entity.name == "BlackOps":
+							self.hitEnemy = hit.entity.getPy("Sentry")
+							try:
+								self.hitEnemy.takeDamage(5, self.entity, self.transf.getPosition())
+							except:
+								pass
+								
+								
 					self.causeDamage()
 
 				elif result.hit:
