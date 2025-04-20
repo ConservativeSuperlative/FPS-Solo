@@ -20,6 +20,7 @@ class FirstPersonController(cave.Component):
 		self.UI_Heart_Full = self.entity.getChild("UI Heart_Full")
 		self.UI_Ammo_Inv = self.entity.getChild("UI Ammo_Inv")
 		self.UI_WeaponImage = self.entity.getChild("UI WeaponImg")
+		self.UI_BloodSpatter = self.entity.getChild("UI BloodSpatter")
 		self.mesh = self.entity.getChild("FPS Mesh")
 		self.AK74 = self.mesh.getChild("AK 74")
 		self.AR4 = self.mesh.getChild("AR4")
@@ -38,6 +39,7 @@ class FirstPersonController(cave.Component):
 		self.currentWeapon = cave.Entity()
 		self.currentWeaponInt = 0
 		self.muzzle = self.entity.getChild("Muzzle")
+		
 		#self.muzzle = self.currentWeapon.getChild("Muzzle")
 		#self.mesh.deactivate(scene)
 	def movement(self):
@@ -159,7 +161,7 @@ class FirstPersonController(cave.Component):
 						if hit.entity.name == "BlackOps":
 							self.hitEnemy = hit.entity.getPy("Sentry")
 							try:
-								self.hitEnemy.takeDamage(5, self.entity, self.transf.getPosition())
+								self.hitEnemy.takeDamage(self.currentWeapon.properties.get("Damage"), self.entity, self.transf.getPosition())
 							except:
 								pass
 								
@@ -208,11 +210,10 @@ class FirstPersonController(cave.Component):
 			else:
 				self.ammoInv = self.ammoMax * 4
 				
-			print("AMMP PICKUP")
+			print("AMMO PICKUP")
 	
 	def weaponPickup(self, weapon):
-		
-		print(self.weaponInv)
+	
 		if weapon != self.currentWeapon:
 			scene = cave.getScene()
 			weaponName = weapon.entity.name
@@ -306,9 +307,12 @@ class FirstPersonController(cave.Component):
 		#print(self.hitEnemy.entity.getUID())	
 	
 	def takeDamage(self, damage):
+		scene = cave.getScene()
 		self.healthCurrent = self.healthCurrent - damage
 		print("Hit Landed")
-		#self.entity.
+		bs = scene.copyEntity(self.UI_BloodSpatter)
+		bs.activate(scene)
+		bs.scheduleKill(0.05)
 	
 	def checkHealth(self):
 		if self.healthCurrent < 100:

@@ -28,7 +28,7 @@ class PT_WeaponPickup(cave.Component):
 			if collision.entity.name == "Player":
 				
 				self.pickupPlayer = collision.entity 
-				print("Trying WeaponPickup")
+				
 				self.pickupPlayer = self.pickupPlayer.getPy("FirstPersonController")
 				self.pickedUp = True
 				self.pickupPlayer.weaponPickup(self)
