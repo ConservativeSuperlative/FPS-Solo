@@ -19,6 +19,7 @@ class Enemy(cave.Component):
 		self.isRunning = False
 		self.spawnPoint = self.transf.worldPosition.copy()
 		self.Health = self.entity.properties.get("Health")
+		self.HealthCurrent = self.Health
 		self.isDead = self.entity.properties.get("isDead")
 		self.fsm = cave.StateMachine(self)
 		self.fsm.setState(EStatePatrol())
@@ -87,27 +88,23 @@ class Enemy(cave.Component):
 	
 	def death(self):
 		scene = cave.getScene()
-		self.respawnTimer = cave.SceneTimer
-		self.character.disable()
-		options = ["p-death-1", "p-death-2", "p-death-3", "p-death-4"]
-		hndl = self.animator.playByName(options[cave.random.randint(0, len(options) - 1)], 0.2, priority=1)
-		hndl.speed *= 1.2
-		self.entity.scheduleKill(10)
-		
-		self.respawn()
-		try:
+		if self.isDead == True:
+			self.entity.scheduleKill(5)
+			
 			self.killer.addKill(1)
-		except:
-			print("fail")
+			self.respawn()
+			self.end(scene)
 		
 			
 	def respawn(self):
 		
-
+		#self.entity.scheduleKill(2)
 		scene = cave.getScene()
+		while True:
+			if self.respawnTimer.get() >= 2:
+				scene.addFromTemplate(templateName = "TestCharacter", position = self.spawnPoint)
 		
-		scene.addFromTemplate(templateName = "TestCharacter", position = self.spawnPoint)
-
+			break
 		
 
 	def atkMelee(self):
@@ -115,20 +112,22 @@ class Enemy(cave.Component):
 		
 		
 	def checkHealth(self):
-		if not self.isDead:
-			if self.Health < 1:
-				
+		if self.isDead == False:
+			if self.HealthCurrent <= 0:
+				self.respawnTimer.reset()
 				self.isDead = True
 				self.death()
-	
+		
+				
+		
 	def takeDamage(self, damage, attacker : cave.Entity, position):
 		self.takingDamage = True
 		scene = cave.getScene()
 		try:
-			if self.Health >= 1:
+			if self.HealthCurrent >= 1:
 				blood : cave.ParticleComponent = self.mesh.getChild("Blood")
 				# blood : cave.ParticleComponent = scene.copyEntity(self.mesh.getChild("Blood"))
-				self.Health -= damage
+				self.HealthCurrent = self.HealthCurrent - damage
 				#print(attacker.entity.getUID())
 				blood.activate(scene)
 				blood.reload()
@@ -138,7 +137,7 @@ class Enemy(cave.Component):
 				self.animator.playByName("p-damage", .2, priority=1)
 				self.killer = attacker
 				#self.fsm.setState(EStateCombat.Injured())
-				print(position)
+				print(self.HealthCurrent)
 			else:
 				
 				print("dead")
@@ -175,14 +174,26 @@ class Enemy(cave.Component):
 					self.animator.playByName("p-idle", 0.2, loop=True)
 
 	def update(self):
-		if not self.isDead and not self.takingDamage:
+		if not self.isDead:
 			self.checkHealth()
 			self.enemyScan()
 			self.fsm.run()
-			
-			self.updateAnimation()
+			if not self.isDead:
+				self.updateAnimation()
 			
 			#self.chasePlayer()
 	def end(self, scene: cave.Scene):
-		pass
-	
+		if self.isDead == True:
+			scene = cave.getScene()
+			self.character.disable()
+			options = ["p-death-1", "p-death-2", "p-death-3", "p-death-4"]
+			hndl = self.animator.playByName(options[cave.random.randint(0, len(options) - 1)], 0.2, priority=1)
+			hndl.speed *= 1.2
+			scene.addFromTemplate(templateName = "TestCharacter", position = cave.Vector3(104,0,44))
+			#self.entity.scheduleKill(4)
+			
+			
+			
+				
+			
+			

@@ -11,7 +11,9 @@ class Sentry(cave.Component):
 		self.character : cave.CharacterComponent = self.entity.get("CharacterComponent")
 		self.transf = self.entity.getTransform()
 		self.pos = self.transf.position
+		self.spawnPoint = self.pos.copy()
 		self.pos = self.pos + cave.Vector3(0,1.7,0)
+		
 		self.cooldownTimer = cave.SceneTimer()
 		self.scanTimer = cave.SceneTimer()
 		self.hitTimer = cave.SceneTimer()
@@ -21,6 +23,8 @@ class Sentry(cave.Component):
 		self.Health = self.MaxHealth
 		self.isDead = False
 		self.anim.playByName("BlackOps_Rifle_Idle", .2)
+		self.fsm = cave.StateMachine(self)
+		self.fsm.setState(EStatePatrol())
 	def update(self):
 		if self.isDead == False:
 			
@@ -60,7 +64,7 @@ class Sentry(cave.Component):
 				else:
 					self.scanTimer.reset()
 					self.anim.playByName("BlackOps_Rifle_Idle", .1, 0, True, 0)
-					print("reset")
+					#print("reset")
 			
 			self.checkHealth()
 	
@@ -68,9 +72,11 @@ class Sentry(cave.Component):
 		scene = cave.getScene()
 		if self.Health <= 0:
 			if self.isDead == False:	
+				if self.target:
+					self.target.getPy("FirstPersonController").addKill(1)
 				self.end(scene)
 				self.isDead = True
-
+				
 			
 	
 	def takeDamage(self, damage, attacker : cave.Entity, position):

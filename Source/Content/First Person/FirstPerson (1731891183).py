@@ -5,11 +5,15 @@ import cave
 class FirstPersonController(cave.Component):
 	walkSpeed = 5.0
 	runSpeed = 8.0
-
+	mouseSens = 0.012
 	def start(self, scene: cave.Scene):
+		
 		self.transf = self.entity.getTransform()
 		self.character : cave.CharacterComponent = self.entity.get("Character")
 		self.cam = self.entity.getChild("Camera")
+		bg = cave.playSound("nowhere-to-run.ogg")
+		bg.setVolume(.3)
+		self.mouseSens = 0.012
 		self.camTransf = self.cam.getTransform()
 		self.hm = self.entity.getChild("hitMarker")
 		# This will control the fire rate...
@@ -21,6 +25,7 @@ class FirstPersonController(cave.Component):
 		self.UI_Ammo_Inv = self.entity.getChild("UI Ammo_Inv")
 		self.UI_WeaponImage = self.entity.getChild("UI WeaponImg")
 		self.UI_BloodSpatter = self.entity.getChild("UI BloodSpatter")
+		self.UI_BloodMesh = self.entity.getChild("UI BloodMesh")
 		self.mesh = self.entity.getChild("FPS Mesh")
 		self.AK74 = self.mesh.getChild("AK 74")
 		self.AR4 = self.mesh.getChild("AR4")
@@ -33,13 +38,16 @@ class FirstPersonController(cave.Component):
 		self.AK_Damage = self.AK74.properties.get("Damage")
 		self.movementState = 0 # [idle, walking, running]
 		self.movementTimer = cave.SceneTimer() # To add footsteps...
-		self.KillCount = 0
+		self.KillCount : int = 0
 		self.isDead = False
+		self.isAiming = False
 		self.weaponInv : cave.Entity = []
 		self.currentWeapon = cave.Entity()
 		self.currentWeaponInt = 0
 		self.muzzle = self.entity.getChild("Muzzle")
-		
+		self.ADSMesh = self.cam.getChild("ADS Mesh")
+		self.ADSMeshB = self.cam.getChild("ADS MeshB")
+		self.ADSMuzzle = self.cam.getChild("ADS Muzzle")
 		#self.muzzle = self.currentWeapon.getChild("Muzzle")
 		#self.mesh.deactivate(scene)
 	def movement(self):
@@ -86,23 +94,38 @@ class FirstPersonController(cave.Component):
 				self.weaponSelect(events.getMouseScroll())
 		
 	
-	def mouselook(self, sens=-0.012):
-		events = cave.getEvents()
-		events.setRelativeMouse(True)
+	def mouselook(self, sens=-mouseSens):
+		if self.isAiming == False:
+			events = cave.getEvents()
+			events.setRelativeMouse(True)
 
-		motion = events.getMouseMotion() * sens
+			motion = events.getMouseMotion() * sens
 
-		self.transf.rotateOnYaw(motion.x)
-		self.camTransf.rotateOnPitch(motion.y)
+			self.transf.rotateOnYaw(motion.x)
+			self.camTransf.rotateOnPitch(motion.y)
 		
 		# Limiting the Camera Rotation:
-		self.camTransf.setEuler(
-			cave.Vector3(
-				cave.math.clampEulerAngle(self.camTransf.euler.x, 90, 270), 
-				self.camTransf.euler.y, 
-				self.camTransf.euler.z
-			))
+			self.camTransf.setEuler(
+				cave.Vector3(
+					cave.math.clampEulerAngle(self.camTransf.euler.x, 90, 270), 
+					self.camTransf.euler.y, 
+					self.camTransf.euler.z
+				))
+		else:
+			events = cave.getEvents()
+			events.setRelativeMouse(True)
 
+			motion = events.getMouseMotion() * -.0024
+			self.transf.rotateOnYaw(motion.x)
+			self.camTransf.rotateOnPitch(motion.y)
+		
+		# Limiting the Camera Rotation:
+			self.camTransf.setEuler(
+				cave.Vector3(
+					cave.math.clampEulerAngle(self.camTransf.euler.x, 90, 270), 
+					self.camTransf.euler.y, 
+					self.camTransf.euler.z
+				))
 	def shoot(self):
 		events = cave.getEvents()
 		scene = cave.getScene()
@@ -120,10 +143,11 @@ class FirstPersonController(cave.Component):
 				sd.pitch = cave.random.uniform(0.4, 1.0)
 
 				# Duplicating the Muzzle Effect...
+				
 				muzzle = scene.copyEntity(self.muzzle)
 				muzzle.activate(scene)
 				muzzle.scheduleKill(0.05) # Only lasts for a fraction of a Second
-
+				
 				# I'll raycast from the camera position to its backward direction 
 				# in order to see if the projectile hits something. 
 				origin : cave.Vector3 = cam.getWorldPosition()
@@ -181,7 +205,77 @@ class FirstPersonController(cave.Component):
 				emptySd.setProgress(.5)
 				emptySd.setVolume(3)
 				self.shotTimer.reset()
+		if self.isAiming == True:
+			if events.active(cave.event.MOUSE_LEFT) and self.shotTimer.get() > 0.1 and self.ammoCurrent > 0:
+				self.shotTimer.reset()
+
+				# Shot Sound:
+				sd = cave.playSound("bang-04.ogg")
+				sd.pitch = cave.random.uniform(0.4, 1.0)
+
+				# Duplicating the Muzzle Effect...
+				
+				muzzle = self.ADSMuzzle
+				muzzle.activate(scene)
+				muzzle.scheduleKill(0.05) # Only lasts for a fraction of a Second
+				
+				# I'll raycast from the camera position to its backward direction 
+				# in order to see if the projectile hits something. 
+				origin : cave.Vector3 = cam.getWorldPosition()
+				target = origin + cam.getForwardVector(True) * -1000
+
+				# I'll also create a Mask so the raycast only checks for the bodies
+				# with the 7th bit enabled. This will prevent it from hitting the
+				# player capsule itself.
+				mask = cave.BitMask(False)
+				mask.enable(7)
+				#DA- Create a mask to trace for objects on mask 12 (enemies)
+				enemyMask = cave.BitMask(False)
+				enemyMask.enable(12)
 			
+				enemyResult : cave.rayCastOut = scene.rayCast(origin, target, enemyMask)
+				# Then I raycast and check to see if it hits...
+				result = scene.rayCast(origin, target, mask)
+				
+				#DA- Check for an enemy first, if no enemy is hit, check if we need to draw a bullet hole
+				self.ammoCurrent -= 1
+				if enemyResult.hit:
+					#scene.addDebugSphere(result.position, .5, cave.Vector3(0, 255, 0), 10)
+					#enemy = scene.checkContactSphere(self, cave.Vector3(enemyResult.position), .5, 12)
+					for hit in scene.checkContactSphere(enemyResult.position, .33):
+						if hit.entity.name == "TestCharacter":
+							
+							self.hitEnemy = hit.entity.getPy("Enemy")
+						
+							try:
+								self.hitEnemy.takeDamage(self.AK_Damage, self, self.transf.getPosition())
+							
+							except:
+								print("Player Can't call takeDamage on TestCharacter")
+								pass
+						if hit.entity.name == "BlackOps":
+							self.hitEnemy = hit.entity.getPy("Sentry")
+							try:
+								self.hitEnemy.takeDamage(self.currentWeapon.properties.get("Damage"), self.entity, self.transf.getPosition())
+							except:
+								pass
+								
+								
+					self.causeDamage()
+
+				elif result.hit:
+					# Adding the Bullet Hole based on its Entity Template:
+					obj = scene.addFromTemplate("Bullet Hole", result.position)
+					obj.getTransform().lookAt(result.normal)
+					# Schedule Bullet Hole to be killed
+					obj.scheduleKill(5.0)
+			#DRY FIRE#######		
+			elif events.active(cave.event.MOUSE_LEFT) and self.shotTimer.get() > 0.1 and self.ammoCurrent <= 0:
+			
+				emptySd = cave.playSound("gun-trigger-click-01.ogg")
+				emptySd.setProgress(.5)
+				emptySd.setVolume(3)
+				self.shotTimer.reset()	
 	def reloadWeapon(self):
 		
 		scene = cave.getScene()
@@ -191,7 +285,7 @@ class FirstPersonController(cave.Component):
 				x = self.ammoMax - self.ammoCurrent
 					
 				if self.ammoInv >= 30:
-
+					print(f"{self.ammoCurrent} rounds wasted.")
 					self.ammoCurrent = self.ammoMax
 					self.ammoInv = self.ammoInv - 30
 					sd = cave.playSound("gun-cocking-01.ogg")
@@ -210,7 +304,7 @@ class FirstPersonController(cave.Component):
 			else:
 				self.ammoInv = self.ammoMax * 4
 				
-			print("AMMO PICKUP")
+			#print("AMMO PICKUP")
 	
 	def weaponPickup(self, weapon):
 	
@@ -298,6 +392,10 @@ class FirstPersonController(cave.Component):
 		
 		ammoInvUI = self.UI_Ammo_Inv.get("UI Element")
 		ammoInvUI.setText(str(int(self.ammoInv)))
+		#killCount = self.UI_Kills.get("UI Element")
+		
+		#killCount.setText(str(int(self.KillCount)))
+		self.UI_Kills.reload()
 	#VITALS	
 	def causeDamage(self):
 		scene = cave.getScene()
@@ -307,13 +405,16 @@ class FirstPersonController(cave.Component):
 		#print(self.hitEnemy.entity.getUID())	
 	
 	def takeDamage(self, damage):
+		
 		scene = cave.getScene()
+		sd = cave.playSound("grunt.ogg", 3)
 		self.healthCurrent = self.healthCurrent - damage
-		print("Hit Landed")
-		bs = scene.copyEntity(self.UI_BloodSpatter)
+		#print("Hit Landed")
+		bs = scene.copyEntity(self.UI_BloodMesh)
 		bs.activate(scene)
 		bs.scheduleKill(0.05)
-	
+		
+		
 	def checkHealth(self):
 		if self.healthCurrent < 100:
 			if self.healthCurrent < 1:
@@ -332,7 +433,7 @@ class FirstPersonController(cave.Component):
 		self.transf.setWorldPosition(6.3,0,-9.3)
 		#self.camTransf.setWorldPosition(0,0,0)
 		self.healthCurrent = self.healthMax
-
+		
 	
 	def respawn(self):
 		if self.isDead == True:
@@ -348,27 +449,53 @@ class FirstPersonController(cave.Component):
 		
 
 		scene = cave.getScene()
-		kills = scene.copyEntity(self.UI_Kills)
+		#kills = scene.copyEntity(self.UI_Kills)
+		kills = self.UI_Kills
 		killsUI = kills.get("UI Element")
+		
+		
 		self.KillCount = self.KillCount + add
 		
 		if kills.getActive() == False:
 			#kills.setActive(True)
 			kills.activate(scene)
-			killsUI.setText(str(self.KillCount))
+			killsUI.setText(str(int(self.KillCount)))
 			#self.UI_KillCount.reload()
-		
+		else:
+			killsUI.setText(str(int(self.KillCount)))
+	
 	def ADS(self):
-		events = cave.getEvents()
-		cam : cave.CameraComponent = self.cam.get("Camera")
-		
-		if events.pressed(cave.event.MOUSE_RIGHT):
-			cam.fov = 60
-			
-
-		if events.released(cave.event.MOUSE_RIGHT):
-			cam.fov = 85
-
+		if len(self.weaponInv) > 0:
+			events = cave.getEvents()
+			cam : cave.CameraComponent = self.cam.get("Camera")
+			scene = cave.getScene()
+			mesh : cave.MeshComponent = self.ADSMeshB.get("MeshComponent")
+			meshTransf : cave.TransformComponent = self.ADSMeshB.get("TransformComponent")
+			if events.pressed(cave.event.MOUSE_RIGHT):
+				if self.currentWeapon == self.AK74:
+					mesh.mesh.setAsset("AK74 Mesh")
+					meshTransf.rotateOnPitch(1.52)
+				elif self.currentWeapon == self.AR4:
+					mesh.mesh.setAsset("SK_AR4")	
+				self.isAiming = True
+				cam.fov = 25
+				self.mesh.deactivate(scene)
+				self.ADSMesh.activate(scene)
+				muz = self.ADSMesh.getChild("ADS Muzzle")
+				muz.deactivate(scene)
+				
+			if events.released(cave.event.MOUSE_RIGHT):
+				if self.currentWeapon == self.AK74:
+					meshTransf.rotateOnPitch(-1.52)
+				self.isAiming = False
+				self.mesh.activate(scene)
+				children = self.mesh.getChildren()
+				for child in children:
+					if child != self.currentWeapon:
+						child.deactivate(scene)
+				self.muzzle.deactivate(scene)
+				self.ADSMesh.deactivate(scene)
+				cam.fov = 85
 	def animateAndSounds(self):
 		layer : cave.AnimationComponentAnimationLayer = self.animator.getAnimation(0)
 		layer.speed = 100
