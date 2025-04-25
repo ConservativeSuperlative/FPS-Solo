@@ -5,9 +5,9 @@
         "name": "Post Processing"
     },
     "resolution": {
-        "height": 1009,
+        "height": 1369,
         "use-desktop": true,
-        "width": 1920
+        "width": 2560
     },
     "shader-program": {
         "asset-id": 0,
