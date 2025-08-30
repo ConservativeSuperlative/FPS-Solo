@@ -7,7 +7,7 @@ class FirstPersonController(cave.Component):
 	runSpeed = 8.0
 	mouseSens = 0.012
 	def start(self, scene: cave.Scene):
-		
+		self.scene = scene
 		self.transf = self.entity.getTransform()
 		self.character : cave.CharacterComponent = self.entity.get("Character")
 		self.cam = self.entity.getChild("Camera")
@@ -42,6 +42,7 @@ class FirstPersonController(cave.Component):
 		self.isDead = False
 		self.isAiming = False
 		self.weaponInv : cave.Entity = []
+		self.invActive = False
 		self.currentWeapon = cave.Entity()
 		self.currentWeaponInt = 0
 		self.muzzle = self.entity.getChild("Muzzle")
@@ -50,6 +51,17 @@ class FirstPersonController(cave.Component):
 		self.ADSMuzzle = self.cam.getChild("ADS Muzzle")
 		#self.muzzle = self.currentWeapon.getChild("Muzzle")
 		#self.mesh.deactivate(scene)
+	def inventory(self):
+		events = cave.getEvents()
+		i = events.active(cave.event.KEY_TAB)
+		if i:
+			self.scene.get("UI_Inventory").activate(self.scene)
+			self.invActive = True
+			cave.showMouse(True)
+		else:
+			self.scene.get("UI_Inventory").deactivate(self.scene)
+			self.invActive = False
+			cave.showMouse(False)
 	def movement(self):
 		if self.isDead == False:
 			
@@ -381,10 +393,14 @@ class FirstPersonController(cave.Component):
 				icon : cave.UIElementComponent = self.UI_WeaponImage.get("UI Element")
 				self.UI_WeaponImage.getChild("Icon_AR4").activate(scene)
 				self.UI_WeaponImage.getChild("Icon_AK74").deactivate(scene)
-				
+		
+		
+
 		self.muzzle = self.currentWeapon.getChild("Muzzle")
 		self.muzzle.deactivate(scene)
 		print(self.currentWeapon.name)		
+		
+		
 	
 	def updateUI(self):
 		ammoUI = self.UI_Ammo.get("UI Element")
@@ -402,6 +418,12 @@ class FirstPersonController(cave.Component):
 		
 		#killCount.setText(str(int(self.KillCount)))
 		self.UI_Kills.reload()
+		if len(self.weaponInv) > 0 and self.invActive == False:
+			self.scene.get("UI_Crosshair").activate(self.scene)
+		else:
+			self.scene.get("UI_Crosshair").deactivate(self.scene)
+		
+					
 	#VITALS	
 	def causeDamage(self):
 		scene = cave.getScene()
@@ -539,6 +561,7 @@ class FirstPersonController(cave.Component):
 		self.updateUI()
 		self.checkHealth()
 		self.respawn()
+		self.inventory()
 	def end(self, scene: cave.Scene):
 		pass
 	

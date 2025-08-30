@@ -108,7 +108,7 @@ class OnlineServer(cave.Component):
 				
 			else:
 				id = str(id)
-			#if not id == 69:
+			if not id == 69:
 				if not id in self.opponents:
 					ent = self.entity.getScene().addFromTemplate("Online Player")
 					ent.properties["hasControl"] = False
