@@ -23,7 +23,7 @@ class OnlinePlayer(cave.Component):
 	def updateControls(self):
 		dt = cave.getDeltaTime()
 		events = cave.getEvents()
-
+		
 		x = events.active(cave.event.KEY_A) - events.active(cave.event.KEY_D)
 		z = events.active(cave.event.KEY_W) - events.active(cave.event.KEY_S)
 

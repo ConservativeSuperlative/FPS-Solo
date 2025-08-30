@@ -4,8 +4,10 @@ class StandardMag(cave.Component):
 
 	def start(self, scene: cave.Scene):
 		self.scene = cave.getScene()
+		
 		self.transf = self.entity.getTransform()
 		self.mesh = self.entity.getChild("Mesh")
+		self.rbc : cave.RigidBodyComponent = self.mesh.get("RigidBodyComponent")
 		self.events = cave.getEvents()
 		self.ammo = 30
 		self.pickupPlayer = cave.Entity = None
@@ -39,12 +41,15 @@ class StandardMag(cave.Component):
 				self.Timer1.reset()
 				self.entity.scheduleKill(.05)
 	def tryPickup(self):
-		
-			#collisionList = [cave.RayCastOut]
+		col = self.rbc.getCollisionsWith("Player")
 
-		collision = self.scene.rayCast(self.transf.position, self.transf.position + self.transf.getUpVector() * 3, cave.BitMask(12))
+		if col:
+			
+			self.pickup(col.pop(0))
+
+		"""collision = self.scene.rayCast(self.transf.position, self.transf.position + self.transf.getUpVector() * 3, cave.BitMask(12))
 		if collision.hit:
-			self.pickup(collision)
+			self.pickup(collision)"""
 			
 	def update(self):
 		if self.pickedUp == False:

@@ -1,6 +1,7 @@
 import cave
 import cave.math
 import cave.network
+import cave.network
 
 class OnlineServer(cave.Component):
 	def start(self, scene: cave.Scene):
@@ -17,7 +18,7 @@ class OnlineServer(cave.Component):
 		self.player.properties["hasControl"] = True
 		self.player.properties["addr"] = "" # Local
 		self.player.properties["lastUpdated"] = cave.SceneTimer()
-
+		self.gameball : cave.Entity = None
 		# The other players, mapped by address:
 		self.opponents = {}
 
@@ -33,6 +34,7 @@ class OnlineServer(cave.Component):
 
 		if self.isServer():
 			self.server = cave.network.Server()
+			self. gameball = scene.addFromTemplate("T_GameBall", (self.transf.worldPosition + cave.Vector3(200,50,0)))
 		else:
 			self.client = cave.network.Client()
 
@@ -61,6 +63,15 @@ class OnlineServer(cave.Component):
 		for addr in toRemove:
 			self.opponents[addr].kill()
 			del self.opponents[addr]
+	
+	def getGameBallPosition(self, ent: cave.Entity) -> cave.network.Package:
+		transf = ent.getTransform()
+		transf2 = ent.getChild("Mesh").getTransform()
+		pkg = cave.network.Package()
+		pkg.writeInt(69)
+		pkg.writeVector3(transf.getPosition())
+		pkg.writeFloat(transf2.getWorldEuler().y)
+		return pkg
 
 	def getPackagePosition(self, ent: cave.Entity, id: int=0) -> cave.network.Package:
 		transf  = ent.getTransform()
@@ -68,7 +79,7 @@ class OnlineServer(cave.Component):
 
 		pkg = cave.network.Package()
 		pkg.writeInt(id) # Player ID 
-
+		
 		pkg.writeInt(0)  # Command for Position and Rotation!
 		pkg.writeVector3(transf.getPosition())
 		pkg.writeFloat(transf2.getWorldEuler().y)
@@ -82,20 +93,33 @@ class OnlineServer(cave.Component):
 
 			if id == 0:
 				id = addr
+			elif id == 69:
+				print("PKG-69")
+				if not self.isServer():
+					if self.gameball == None:
+						self.gameball = self.entity.getScene().addFromTemplate("T_GameBall")
+						self.gameball.properties["targetPos"] = pkg.package.readVector3()
+					else:
+						self.gameball.properties["targetPos"] = pkg.package.readVector3()
+				#ent = self.entity.getScene().addFromTemplate("T_GameBall")
+				#ent.properties["hasControl"] = False
+				#ent.properties["targetPos"] = pkg.package.readVector3()
+				#ent.properties["targetRot"] = pkg.package.readFloat()
+				
 			else:
 				id = str(id)
+			#if not id == 69:
+				if not id in self.opponents:
+					ent = self.entity.getScene().addFromTemplate("Online Player")
+					ent.properties["hasControl"] = False
+					ent.properties["addr"] = addr
+					ent.properties["lastUpdated"] = cave.SceneTimer()
+					self.opponents[id] = ent
 
-			if not id in self.opponents:
-				ent = self.entity.getScene().addFromTemplate("Online Player")
-				ent.properties["hasControl"] = False
-				ent.properties["addr"] = addr
-				ent.properties["lastUpdated"] = cave.SceneTimer()
-				self.opponents[id] = ent
+				ent : cave.Entity = self.opponents[id]
+				ent.properties["lastUpdated"].reset()
 
-			ent : cave.Entity = self.opponents[id]
-			ent.properties["lastUpdated"].reset()
-
-			cmd = pkg.package.readInt()
+				cmd = pkg.package.readInt()
 
 			if cmd == 0: # Position and Rotation!
 				ent.properties["targetPos"] = pkg.package.readVector3()
@@ -113,12 +137,13 @@ class OnlineServer(cave.Component):
 		for ent in entities:
 			entAddr = ent.properties.get("addr", "")
 			pkg = self.getPackagePosition(ent, hash(entAddr) & 0xFFFFFF)
+			pkg2 = self.getGameBallPosition(self.gameball)
 
 			for peer in peers:
 				if peer.getAddress() == entAddr:
 					continue
 				peer.send(pkg, reliable=False)
-
+				peer.send(pkg2, reliable=False)
 		# You MUST call this at the end of every 
 		# frame for the Server to function properly:
 		self.server.update()

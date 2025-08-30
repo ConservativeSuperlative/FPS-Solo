@@ -96,6 +96,7 @@ class FirstPersonController(cave.Component):
 	
 	def mouselook(self, sens=-mouseSens):
 		if self.isAiming == False:
+			print("ADS OFF")
 			events = cave.getEvents()
 			events.setRelativeMouse(True)
 
@@ -112,6 +113,7 @@ class FirstPersonController(cave.Component):
 					self.camTransf.euler.z
 				))
 		else:
+			print("ADS On")
 			events = cave.getEvents()
 			events.setRelativeMouse(True)
 
@@ -134,8 +136,11 @@ class FirstPersonController(cave.Component):
 		# If the Player is holding the Left Mouse Button, it should be able to shoot.
 		# But I'm also using a timer to limit how many bullets per second it will be
 		# able to shoot. Otherwise, it will become a mess!
+		
 		if self.mesh.isActive():
+			print("Shooting - Mesh Active")
 			if events.active(cave.event.MOUSE_LEFT) and self.shotTimer.get() > 0.1 and self.ammoCurrent > 0:
+				print("Shooting - Ammo Test Passed")
 				self.shotTimer.reset()
 
 				# Shot Sound:
@@ -169,6 +174,7 @@ class FirstPersonController(cave.Component):
 				#DA- Check for an enemy first, if no enemy is hit, check if we need to draw a bullet hole
 				self.ammoCurrent -= 1
 				if enemyResult.hit:
+					print("Shooting - Enemy Hit")
 					#scene.addDebugSphere(result.position, .5, cave.Vector3(0, 255, 0), 10)
 					#enemy = scene.checkContactSphere(self, cave.Vector3(enemyResult.position), .5, 12)
 					for hit in scene.checkContactSphere(enemyResult.position, .33):
@@ -349,7 +355,7 @@ class FirstPersonController(cave.Component):
 
 
 			
-			pass
+			#pass
 		
 
 	
@@ -479,13 +485,15 @@ class FirstPersonController(cave.Component):
 					mesh.mesh.setAsset("SK_AR4")	
 				self.isAiming = True
 				cam.fov = 25
+				
 				self.mesh.deactivate(scene)
 				self.ADSMesh.activate(scene)
-				muz = self.ADSMesh.getChild("ADS Muzzle")
-				muz.deactivate(scene)
-				
+				#muz = self.ADSMeshB.getChild("ADS Muzzle")
+				#muz.deactivate(scene)
+				self.ADSMuzzle.deactivate(scene)
 			if events.released(cave.event.MOUSE_RIGHT):
 				if self.currentWeapon == self.AK74:
+					
 					meshTransf.rotateOnPitch(-1.52)
 				self.isAiming = False
 				self.mesh.activate(scene)
