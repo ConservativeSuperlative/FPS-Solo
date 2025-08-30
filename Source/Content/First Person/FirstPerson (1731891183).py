@@ -418,8 +418,9 @@ class FirstPersonController(cave.Component):
 		
 		#killCount.setText(str(int(self.KillCount)))
 		self.UI_Kills.reload()
-		if len(self.weaponInv) > 0 and self.invActive == False:
+		if len(self.weaponInv) > 0 and self.invActive == False and self.isAiming == False:
 			self.scene.get("UI_Crosshair").activate(self.scene)
+			
 		else:
 			self.scene.get("UI_Crosshair").deactivate(self.scene)
 		
@@ -500,6 +501,7 @@ class FirstPersonController(cave.Component):
 			mesh : cave.MeshComponent = self.ADSMeshB.get("MeshComponent")
 			meshTransf : cave.TransformComponent = self.ADSMeshB.get("TransformComponent")
 			if events.pressed(cave.event.MOUSE_RIGHT):
+				
 				if self.currentWeapon == self.AK74:
 					mesh.mesh.setAsset("AK74 Mesh")
 					meshTransf.rotateOnPitch(1.52)
