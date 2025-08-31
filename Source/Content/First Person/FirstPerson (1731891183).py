@@ -29,7 +29,8 @@ class FirstPersonController(cave.Component):
 		self.mesh = self.entity.getChild("FPS Mesh")
 		self.AK74 = self.mesh.getChild("AK 74")
 		self.AR4 = self.mesh.getChild("AR4")
-		self.ammoMax = self.AK74.properties.get("Ammo")
+		#self.ammoMax = self.AK74.properties.get("Ammo")
+		self.ammoMax = 0
 		self.healthMax = self.entity.properties.get("Health")
 		self.healthCurrent = self.healthMax
 		self.ammoCurrent = self.ammoMax
@@ -70,7 +71,7 @@ class FirstPersonController(cave.Component):
 						slot.deactivate(self.scene)
 				at = inventory.getChild("AmmoText")
 				at : cave.UIElementComponent = at.get("UIElementComponent")
-				at.setText(str(self.ammoCurrent + self.ammoInv))
+				at.setText(str(int(self.ammoCurrent + self.ammoInv).real))
 				for each in self.weaponInv:
 					
 					#slots[self.slotCount].activate(self.scene)
@@ -383,6 +384,8 @@ class FirstPersonController(cave.Component):
 				
 				if weaponName == "AR4":
 					self.currentWeapon = self.AR4
+					self.ammoCurrent = self.currentWeapon.properties.get("Ammo")
+					self.ammoMax = self.currentWeapon.properties.get("Ammo") * 4
 					self.AR4.activate(scene)
 					#icon = cave.UIStyleColor.image.setAsset("M4-Thumbnail.png")
 					icon : cave.UIElementComponent = self.UI_WeaponImage.get("UI Element")
@@ -390,6 +393,8 @@ class FirstPersonController(cave.Component):
 					self.UI_WeaponImage.getChild("Icon_AK74").deactivate(scene)
 				if weaponName == "AK74":
 					self.currentWeapon = self.AK74
+					self.ammoCurrent = self.currentWeapon.properties.get("Ammo")
+					self.ammoMax = self.currentWeapon.properties.get("Ammo") * 4
 					self.AK74.activate(scene)
 					#icon = cave.UIStyleColor.image.setAsset("M4-Thumbnail.png")
 					icon : cave.UIElementComponent = self.UI_WeaponImage.get("UI Element")
@@ -441,7 +446,9 @@ class FirstPersonController(cave.Component):
 	
 	def updateUI(self):
 		ammoUI = self.UI_Ammo.get("UI Element")
+	
 		ammoUI.setText(f'{str(int(self.ammoCurrent))} / {str(int(self.ammoMax))}')
+		
 		healthUI = self.UI_Health.get("UI Element")
 		healthUI.setText(str(int(self.healthCurrent)))
 		
@@ -449,7 +456,7 @@ class FirstPersonController(cave.Component):
 		heartFullUI.setDefaultQuadAlpha(float(self.healthCurrent * 0.01))
 		heartFullUI.reload()
 		
-		ammoInvUI = self.UI_Ammo_Inv.get("UI Element")
+		ammoInvUI = self.UI_Ammo_Inv.get("UIElementComponent")
 		ammoInvUI.setText(str(int(self.ammoInv)))
 		#killCount = self.UI_Kills.get("UI Element")
 		
