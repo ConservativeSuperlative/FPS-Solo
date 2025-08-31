@@ -58,22 +58,26 @@ class FirstPersonController(cave.Component):
 		inventory = self.scene.get("UI_Inventory")
 		slots = inventory.getChildren()
 		#self.slotCount = slots.count(cave.UIElementComponent)
-		for slot in slots:
-			slot.deactivate(self.scene)
+		#for slot in slots:
+			#slot.deactivate(self.scene)
 		if i:
 			if self.invActive == False:
 				self.scene.get("UI_Inventory").activate(self.scene)
 				self.invActive = True
 				cave.showMouse(True)
-				
+				for slot in slots:
+					slot.deactivate(self.scene)
 				
 				for each in self.weaponInv:
 					
 					#slots[self.slotCount].activate(self.scene)
 					cell = slots[self.weaponInv.index(each)]
 					print(cell.name)
+					cellUEC : cave.UIElementComponent = cell.get("UIElementComponent")
+					cellUEC.setText(each)
+					print(cellUEC.layer)
 					cell.activate(self.scene)
-					inventory.reload()
+					
 					#cellUI : cave.UIElementComponent = cell.get("UIElementComponent")
 					#print(cellUI.position)
 					#cell.setParent(inventory)
