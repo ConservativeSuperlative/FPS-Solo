@@ -66,8 +66,11 @@ class FirstPersonController(cave.Component):
 				self.invActive = True
 				cave.showMouse(True)
 				for slot in slots:
-					slot.deactivate(self.scene)
-				
+					if not slot.name == "AmmoSlot":
+						slot.deactivate(self.scene)
+				at = inventory.getChild("AmmoText")
+				at : cave.UIElementComponent = at.get("UIElementComponent")
+				at.setText(str(self.ammoCurrent + self.ammoInv))
 				for each in self.weaponInv:
 					
 					#slots[self.slotCount].activate(self.scene)
