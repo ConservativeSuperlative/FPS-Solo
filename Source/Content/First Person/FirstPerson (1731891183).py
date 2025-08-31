@@ -41,7 +41,7 @@ class FirstPersonController(cave.Component):
 		self.KillCount : int = 0
 		self.isDead = False
 		self.isAiming = False
-		self.weaponInv : cave.Entity = []
+		self.weaponInv : list = []
 		self.invActive = False
 		self.currentWeapon = cave.Entity()
 		self.currentWeaponInt = 0
@@ -49,19 +49,49 @@ class FirstPersonController(cave.Component):
 		self.ADSMesh = self.cam.getChild("ADS Mesh")
 		self.ADSMeshB = self.cam.getChild("ADS MeshB")
 		self.ADSMuzzle = self.cam.getChild("ADS Muzzle")
+		self.slotCount = 0
 		#self.muzzle = self.currentWeapon.getChild("Muzzle")
 		#self.mesh.deactivate(scene)
 	def inventory(self):
 		events = cave.getEvents()
-		i = events.active(cave.event.KEY_TAB)
+		i = events.pressed(cave.event.KEY_TAB)
+		inventory = self.scene.get("UI_Inventory")
+		slots = inventory.getChildren()
+		#self.slotCount = slots.count(cave.UIElementComponent)
+		for slot in slots:
+			slot.deactivate(self.scene)
 		if i:
-			self.scene.get("UI_Inventory").activate(self.scene)
-			self.invActive = True
-			cave.showMouse(True)
-		else:
-			self.scene.get("UI_Inventory").deactivate(self.scene)
-			self.invActive = False
-			cave.showMouse(False)
+			if self.invActive == False:
+				self.scene.get("UI_Inventory").activate(self.scene)
+				self.invActive = True
+				cave.showMouse(True)
+				
+				
+				for each in self.weaponInv:
+					
+					#slots[self.slotCount].activate(self.scene)
+					cell = slots[self.weaponInv.index(each)]
+					print(cell.name)
+					cell.activate(self.scene)
+					inventory.reload()
+					#cellUI : cave.UIElementComponent = cell.get("UIElementComponent")
+					#print(cellUI.position)
+					#cell.setParent(inventory)
+					#cell.get("UI Element").entity.getTransform().setPosition(cave.Vector3(self.invCellCount,0,0))
+					
+					#cell = cell.get("UI Element")
+					#print(cell.entity.getTransform().getWorldPosition())
+					
+					#print(cell.getTransform().getWorldPosition())
+					self.slotCount += 1
+			else:
+				self.scene.get("UI_Inventory").deactivate(self.scene)
+				
+
+				self.invActive = False
+
+				cave.showMouse(False)
+				self.slotCount = 0
 	def movement(self):
 		if self.isDead == False:
 			
@@ -332,14 +362,14 @@ class FirstPersonController(cave.Component):
 			"""for item in self.weaponInv:
 				if weaponName == item:
 					pass"""
-			if not weapon in self.weaponInv:
+			if not weapon.entity.name in self.weaponInv:
 				if self.mesh.isActive():
 					self.mesh.deactivate(scene)
 				if not self.mesh.isActive():
 					self.mesh.activate(scene)
 					for child in self.mesh.getChildren():
 						child.deactivate(scene)
-				self.weaponInv.append(weapon)
+				self.weaponInv.append(weapon.entity.name)
 				self.currentWeaponInt = (len(self.weaponInv) - 1)		
 				print(f"{weaponName} picked up!")
 				sd = cave.playSound("gun-cocking-01.ogg")

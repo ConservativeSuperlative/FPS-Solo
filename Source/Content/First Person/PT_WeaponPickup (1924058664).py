@@ -9,6 +9,7 @@ class PT_WeaponPickup(cave.Component):
 		self.pickupPlayer = cave.Entity = None
 		self.Timer1 = cave.SceneTimer()
 		self.pickedUp = False
+		self.thumbnail : cave.ImageTexture = None
 		pass
 
 	def respawn(self):
@@ -20,7 +21,7 @@ class PT_WeaponPickup(cave.Component):
 	def tryPickup(self):
 		
 		
-
+		
 		collision = self.scene.rayCast(self.transf.position, self.transf.position + self.transf.getUpVector() * 3, cave.BitMask(12))
 		#self.scene.addDebugLine(self.transf.position, self.transf.position + self.transf.getUpVector() * 3, cave.Vector3(255,255,0))
 		if collision.hit:
