@@ -27,6 +27,7 @@ class FirstPersonController(cave.Component):
 		self.UI_BloodSpatter = self.entity.getChild("UI BloodSpatter")
 		self.UI_BloodMesh = self.entity.getChild("UI BloodMesh")
 		self.mesh = self.entity.getChild("FPS Mesh")
+		self.rbc : cave.RigidBodyComponent = self.entity.get("RigidBodyComponent")
 		self.AK74 = self.mesh.getChild("AK 74")
 		self.AR4 = self.mesh.getChild("AR4")
 		#self.ammoMax = self.AK74.properties.get("Ammo")
@@ -71,15 +72,19 @@ class FirstPersonController(cave.Component):
 						slot.deactivate(self.scene)
 				at = inventory.getChild("AmmoText")
 				at : cave.UIElementComponent = at.get("UIElementComponent")
+				
+				style : cave.UIStyleColor = cave.UIStyleColor()
+				style.image.setAsset("M4-Thumbnail.png")
 				at.setText(str(int(self.ammoCurrent + self.ammoInv).real))
+				
 				for each in self.weaponInv:
 					
 					#slots[self.slotCount].activate(self.scene)
 					cell = slots[self.weaponInv.index(each)]
-					print(cell.name)
+					
 					cellUEC : cave.UIElementComponent = cell.get("UIElementComponent")
 					cellUEC.setText(each)
-					print(cellUEC.layer)
+					
 					cell.activate(self.scene)
 					
 					#cellUI : cave.UIElementComponent = cell.get("UIElementComponent")
@@ -112,7 +117,16 @@ class FirstPersonController(cave.Component):
 		
 			isRunning = events.active(cave.event.KEY_LSHIFT)
 			self.movementState = 0
+			cols = self.character.getCollisions()
+			for col in cols:
+				if col.entity.hasTag("Weapon"):
 
+					ent = col.entity.getRootParent()
+
+				
+					self.weaponPickup(ent.getPy("PT_WeaponPickup"))
+					ent.getPy("PT_WeaponPickup").pickedUp = True
+					
 			dir = cave.Vector3(x, 0, z) 
 			if dir.length() > 0.0:
 				dir.normalize()

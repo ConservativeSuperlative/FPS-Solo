@@ -5,6 +5,7 @@ class PT_WeaponPickup(cave.Component):
 		self.scene = cave.getScene()
 		self.transf = self.entity.getTransform()
 		self.mesh = self.entity.getChild("Mesh")
+		#self.rbc : cave.RigidBodyComponent = self.entity.getParent().get("RigidBodyComponent")
 		self.events = cave.getEvents()
 		self.pickupPlayer = cave.Entity = None
 		self.Timer1 = cave.SceneTimer()
@@ -23,6 +24,7 @@ class PT_WeaponPickup(cave.Component):
 		
 		
 		collision = self.scene.rayCast(self.transf.position, self.transf.position + self.transf.getUpVector() * 3, cave.BitMask(12))
+		#collision = self.rbc.collidedWith("Player")
 		#self.scene.addDebugLine(self.transf.position, self.transf.position + self.transf.getUpVector() * 3, cave.Vector3(255,255,0))
 		if collision.hit:
 			
@@ -39,9 +41,10 @@ class PT_WeaponPickup(cave.Component):
 
 	def update(self):
 		if self.pickedUp == False:
-			self.tryPickup()
+			pass
+			#self.tryPickup()
 		elif self.pickedUp == True:
-			self.entity.scheduleKill(.2)
+			self.entity.scheduleKill(.01)
 		self.respawn()
 	def end(self, scene: cave.Scene):
 		pass

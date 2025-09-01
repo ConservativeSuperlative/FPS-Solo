@@ -8,13 +8,14 @@ class PY_Inv_Cell(cave.Component):
 		
 		self.ui = self.ent.get("UI Element")
 		self.uiComp : cave.UIElementComponent = self.ent.get("UIElementComponent")
-		
+		self.style : cave.UIStyleColor = self.ent.get("UIStyleColor")
 		self.x = 0
 		
 		pass
 
 	def update(self):
 		events = cave.getEvents()
+		
 		#print(self.style)
 		#self.x += 1
 		#print(self.ent.name)
