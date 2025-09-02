@@ -52,8 +52,48 @@ class FirstPersonController(cave.Component):
 		self.ADSMeshB = self.cam.getChild("ADS MeshB")
 		self.ADSMuzzle = self.cam.getChild("ADS Muzzle")
 		self.slotCount = 0
+		self.motionX = 0
+		self.motionY = 0
 		#self.muzzle = self.currentWeapon.getChild("Muzzle")
 		#self.mesh.deactivate(scene)
+	def compass(self):
+		compass = self.scene.get("CompassBar")
+		compUI : cave.UIElementComponent = compass.get("UI Element")
+		
+		if self.transf.getWorldEuler().x == 180:
+			#NORTH
+			if self.transf.getWorldEuler().y > 270:
+				
+				#NORTH-WEST
+				x = 360 - self.transf.getWorldEuler().y
+				print(.27*x)
+				#print(compUI.position.getPixel().x)
+				print("North-West")
+				
+				compUI.position.setRelativeX(.277778*x / 100)
+			else:
+				#NORTH-EAST
+				print("North-East")
+				x = 0 - self.transf.getWorldEuler().y
+				print(.27*x)
+				compUI.position.setRelativeX(.277778*x / 100)
+		else:
+			#SOUTH
+			if self.transf.getWorldEuler().y > 270:
+				#SOUTH-WEST
+				print("South-West")
+				x = -180 + self.transf.getWorldEuler().y
+				print(.27778*x)
+				compUI.position.setRelativeX(.277778*x / 100)
+			else:
+				#SOUTH-EAST
+				print("South-East")
+				x = -180 + self.transf.getWorldEuler().y
+				print(.27778*x)
+				compUI.position.setRelativeX(.277778*x / 100)
+		#compUI.position.setRelativeX(self.transf.getWorldEuler().y)
+		print(self.transf.getWorldEuler())
+		
 	def inventory(self):
 		events = cave.getEvents()
 		i = events.pressed(cave.event.KEY_TAB)
@@ -66,6 +106,7 @@ class FirstPersonController(cave.Component):
 			if self.invActive == False:
 				self.scene.get("UI_Inventory").activate(self.scene)
 				self.invActive = True
+				self.scene.paused = True
 				cave.showMouse(True)
 				for slot in slots:
 					if not slot.name == "AmmoSlot":
@@ -105,6 +146,7 @@ class FirstPersonController(cave.Component):
 
 				cave.showMouse(False)
 				self.slotCount = 0
+				self.scene.paused = False
 	def movement(self):
 		if self.isDead == False:
 			
@@ -126,7 +168,11 @@ class FirstPersonController(cave.Component):
 				
 					self.weaponPickup(ent.getPy("PT_WeaponPickup"))
 					ent.getPy("PT_WeaponPickup").pickedUp = True
-					
+				elif col.entity.hasTag("Shovel"):
+					cave.Scene.playTimeline(self.scene,"TestTimeline", False, False, True)
+					#tl.timeline = "TestTimeline"
+					#tl.isActive(True)
+					print("ShovelTime")
 			dir = cave.Vector3(x, 0, z) 
 			if dir.length() > 0.0:
 				dir.normalize()
@@ -168,7 +214,8 @@ class FirstPersonController(cave.Component):
 
 			self.transf.rotateOnYaw(motion.x)
 			self.camTransf.rotateOnPitch(motion.y)
-		
+			self.motionX = motion.x
+			self.motionY = motion.y
 		# Limiting the Camera Rotation:
 			self.camTransf.setEuler(
 				cave.Vector3(
@@ -608,11 +655,15 @@ class FirstPersonController(cave.Component):
 			sd = cave.playSound("footstep-1.ogg")
 			sd.pitch = cave.random.uniform(0.5, 1.5)
 			sd.volume = 0.2
-
+	def pausedUpdate(self):
+		self.inventory()
+		return super().pausedUpdate()
+	
 	def update(self):
 		self.movement()
 		self.mouselook()
 		self.shoot()
+		self.compass()
 		if self.mesh.getActive() == True:
 
 			self.animateAndSounds()
