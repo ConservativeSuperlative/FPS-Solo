@@ -56,6 +56,16 @@ class FirstPersonController(cave.Component):
 		self.motionY = 0
 		#self.muzzle = self.currentWeapon.getChild("Muzzle")
 		#self.mesh.deactivate(scene)
+	def compass2(self):
+		compass = self.scene.get("CompassBar")
+		compUI : cave.UIElementComponent = compass.get("UI Element")
+		newY = self.transf.getYaw()
+		print(newY)
+		print(self.transf.getWorldEuler().y)
+		if newY > 0:
+			compUI.position.setRelativeX(360 * newY)
+		else:
+			compUI.position.setRelativeX(-newY*.1)
 	def compass(self):
 		compass = self.scene.get("CompassBar")
 		compUI : cave.UIElementComponent = compass.get("UI Element")
@@ -66,33 +76,33 @@ class FirstPersonController(cave.Component):
 				
 				#NORTH-WEST
 				x = 360 - self.transf.getWorldEuler().y
-				print(.27*x)
+				#print(.27778*x)
 				#print(compUI.position.getPixel().x)
-				print("North-West")
+				#print("North-West")
 				
 				compUI.position.setRelativeX(.277778*x / 100)
 			else:
 				#NORTH-EAST
-				print("North-East")
+				#print("North-East")
 				x = 0 - self.transf.getWorldEuler().y
-				print(.27*x)
+				#print(.27778*x)
 				compUI.position.setRelativeX(.277778*x / 100)
 		else:
 			#SOUTH
 			if self.transf.getWorldEuler().y > 270:
 				#SOUTH-WEST
-				print("South-West")
+				#print("South-West")
 				x = -180 + self.transf.getWorldEuler().y
-				print(.27778*x)
+				#print(.27778*x)
 				compUI.position.setRelativeX(.277778*x / 100)
 			else:
 				#SOUTH-EAST
-				print("South-East")
+				#print("South-East")
 				x = -180 + self.transf.getWorldEuler().y
-				print(.27778*x)
+				#print(.27778*x)
 				compUI.position.setRelativeX(.277778*x / 100)
 		#compUI.position.setRelativeX(self.transf.getWorldEuler().y)
-		print(self.transf.getWorldEuler())
+		#print(self.transf.getWorldEuler())
 		
 	def inventory(self):
 		events = cave.getEvents()
@@ -206,7 +216,7 @@ class FirstPersonController(cave.Component):
 	
 	def mouselook(self, sens=-mouseSens):
 		if self.isAiming == False:
-			print("ADS OFF")
+			#print("ADS OFF")
 			events = cave.getEvents()
 			events.setRelativeMouse(True)
 
@@ -224,7 +234,7 @@ class FirstPersonController(cave.Component):
 					self.camTransf.euler.z
 				))
 		else:
-			print("ADS On")
+			#print("ADS On")
 			events = cave.getEvents()
 			events.setRelativeMouse(True)
 
@@ -663,7 +673,8 @@ class FirstPersonController(cave.Component):
 		self.movement()
 		self.mouselook()
 		self.shoot()
-		self.compass()
+		#self.compass()
+		self.compass2()
 		if self.mesh.getActive() == True:
 
 			self.animateAndSounds()

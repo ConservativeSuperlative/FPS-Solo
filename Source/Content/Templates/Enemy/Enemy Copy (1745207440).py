@@ -28,6 +28,7 @@ class Enemy(cave.Component):
 		self.killer : cave.Entity = None
 		self.scanTimer : cave.SceneTimer = cave.SceneTimer()
 		self.takingDamage : bool = False
+		self.iconRef = "Icon_Proto_Red_sm.png"
 	def canMoveForward(self) -> bool:
 		fwd = self.meshTransf.getForwardVector() * 0.2
 		pos = self.transf.worldPosition + cave.Vector3(0, 1, 0)

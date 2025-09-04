@@ -13,6 +13,7 @@ class Sentry(cave.Component):
 		self.pos = self.transf.position
 		self.spawnPoint = self.pos.copy()
 		self.pos = self.pos + cave.Vector3(0,1.7,0)
+		self.iconRef = "Icon_Swat_sm.png"
 		
 		self.cooldownTimer = cave.SceneTimer()
 		self.scanTimer = cave.SceneTimer()
